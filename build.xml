@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<project name="Redactorjs" default="package" basedir="./">
+
+	<property name="pluginSource" value="./../redactorjs" />
+	<property name="foundrySource" value="./../foundry" />
+	<Property name="tempDirectory" value="./tmp" />
+	<property name="outputDirectory" value="./builds" />
+
+	<taskdef name="dumpPluginVersion" classname="tasks.DumpPluginVersionTask" />
+	<taskdef name="dumpFoundryVersion" classname="tasks.DumpFoundryVersionTask" />
+	<taskdef name="addIndexHtml" classname="tasks.AddIndexHtmlTask" />
+
+	<target name="package">
+		<property name="tmp" value="${tempDirectory}" />
+		<property name="source" value="${pluginSource}/plugins/editors/redactorjs" />
+		<property name="build" value="${outputDirectory}" />
+
+		<!-- Get plugin version -->
+		<dumpPluginVersion file="${source}/redactorjs.xml"/>
+		<exec command="cat version.txt" outputProperty="pluginVersion" />
+		<delete file="version.txt" />
+		<property name="buildversion" value="${pluginVersion}" />
+		<property name="pkg_filname" value="plg_redactorjs_${buildversion}" />
+
+		<!-- Create temporary directories -->
+		<echo msg="Create temporary directories" />
+		<delete dir="${tmp}" includeemptydirs="true" verbose="false" failonerror="true" />
+		<mkdir dir="${tmp}" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${tmp}/foundry" />
+
+		<!-- Copy Redactorjs plugin files -->
+		<echo msg="Copy Redactorjs plugin files" />
+		<copy todir="${tmp}" >
+			<fileset dir="${source}">
+				<include name="index.html" />
+				<include name="**/*.php" />
+				<include name="**/*.xml" />
+			</fileset>
+		</copy>
+
+		<!-- Get foundry version -->
+		<dumpFoundryVersion file="${foundrySource}/version"/>
+		<exec command="cat version.txt" outputProperty="foundryVersion" />
+		<delete file="version.txt" />
+
+		<!-- Copy media foundry folder -->
+		<echo msg="Copy media foundry folder" />
+		<copy todir="${tmp}/foundry/${foundryVersion}" >
+			<fileset dir="${foundrySource}">
+				<include name="joomla/" />
+				<include name="scripts/" />
+				<include name="scripts_/" />
+				<include name="index.html" />
+				<include name="version" />
+				<exclude name=".hg/" />
+			</fileset>
+		</copy>
+
+		<!-- Add index.html to each folders -->
+		<addIndexHtml folder="${tmp}" file="${source}/index.html"/>
+
+		<!-- Create archive -->
+		<echo msg="Create archive" />
+		<delete file="${build}/${pkg_filname}.zip" />
+		<zip destfile="${build}/${pkg_filname}.zip" basedir="${tmp}" />
+
+		<!-- Clean up -->
+		<echo msg="Clean up" />
+		<delete dir="${tmp}" includeemptydirs="false" verbose="false" failonerror="true" />
+
+		<!-- Done! -->
+		<echo msg="Done!" />
+
+	</target>
+</project>
